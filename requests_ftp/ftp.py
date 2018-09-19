@@ -18,6 +18,17 @@ from requests.utils import prepend_scheme_if_needed
 log = logging.getLogger(__name__)
 
 
+class UnicodeFTP(ftplib.FTP):
+    """A ftplib.FTP subclass supporting unicode file names as 
+   described by RFC-2640.
+   source: https://stackoverflow.com/a/10691041"""
+
+    def putline(self, line):
+        line = line + '\r\n'
+        if isinstance(line, unicode):
+            line = line.encode('utf8')
+        self.sock.sendall(line)
+
 class FTPSession(requests.Session):
 
     def __init__(self):
@@ -218,7 +229,7 @@ class FTPAdapter(requests.adapters.BaseAdapter):
             return self.send_proxy(request, proxy, **kwargs)
 
         # Establish the connection and login if needed.
-        self.conn = ftplib.FTP()
+        self.conn = UnicodeFTP()
 
         # Use a flag to distinguish read vs connection timeouts, and a flat set
         # of except blocks instead of a nested try-except, because python 3
